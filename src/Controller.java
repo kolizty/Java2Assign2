@@ -8,6 +8,7 @@ import javafx.scene.shape.Rectangle;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -26,15 +27,17 @@ public class Controller implements Initializable {
     @FXML
     private Rectangle game_panel;
 
-    private boolean TURN;
+    private boolean TURN, FINISH;
 
     private static final int[][] chessBoard = new int[3][3];
     private static final boolean[][] flag = new boolean[3][3];
 
     private Socket socket;
 
-    BufferedReader br;
-    PrintWriter pw;
+    private BufferedReader br;
+    private PrintWriter pw;
+
+    private int count;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -43,13 +46,15 @@ public class Controller implements Initializable {
             br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             pw = new PrintWriter(socket.getOutputStream());
             String info = br.readLine();
-            if (info.equals("1")) {
-                System.out.println("You are player 1, waiting for match.");
+            count = Integer.parseInt(info.split(" ")[1]);
+            FINISH = false;
+            if (info.split(" ")[0].equals("1")) {
+                System.out.println("You are player 1, waiting for game " + count + " to match.");
                 TURN = true;
                 PLAYER = PLAY_1;
                 OPPONENT = PLAY_2;
             } else {
-                System.out.println("You are player 2, match start.");
+                System.out.println("You are player 2, game " + count + " start.");
                 TURN = false;
                 PLAYER = PLAY_2;
                 OPPONENT = PLAY_1;
@@ -60,38 +65,51 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    private void gamePanelOnMouseMoved() throws Exception {
-        if (!TURN) {
-            String info = br.readLine();
-            if (info != null){
-                String[] sp = info.split(" ");
-                int x = Integer.parseInt(sp[0]), y = Integer.parseInt(sp[1]);
-                refreshBoard(x, y);
-                TURN = true;
+    private void gamePanelOnMouseMoved() {
+        try {
+            if (!TURN) {
+                String info = br.readLine();
+                if (info != null) {
+                    String[] sp = info.split(" ");
+                    int x = Integer.parseInt(sp[0]), y = Integer.parseInt(sp[1]);
+                    refreshBoard(x, y);
+                    TURN = true;
+                }
+                if (getWinner() == EMPTY) {
+                    System.out.println("Game draw!");
+                    pw.println("0");
+                    game_panel.setDisable(true);
+                    FINISH = true;
+                }
+                if (getWinner() == PLAYER) {
+                    System.out.println("You Win!");
+                    game_panel.setDisable(true);
+                    FINISH = true;
+                }
+                if (getWinner() == OPPONENT) {
+                    System.out.println("You lose!");
+                    game_panel.setDisable(true);
+                    FINISH = true;
+                }
+                if (getWinner() == PLAY_1)
+                    pw.println("1");
+                if (getWinner() == PLAY_2)
+                    pw.println("-1");
+                pw.flush();
             }
-            if (getWinner() == EMPTY) {
-                System.out.println("Game draw!");
-                pw.println("0");
-                game_panel.setDisable(true);
-            }
-            if (getWinner() == PLAYER) {
-                System.out.println("You Win!");
-                game_panel.setDisable(true);
-            }
-            if (getWinner() == OPPONENT) {
-                System.out.println("You lose!");
-                game_panel.setDisable(true);
-            }
-            if (getWinner() == PLAY_1)
-                pw.println("1");
-            if (getWinner() == PLAY_2)
-                pw.println("-1");
-            pw.flush();
+        } catch (Exception e) {
+            if (e.getMessage().equals("Connection reset")) {
+                System.out.println("Server disconnected, game exit.");
+                System.exit(-1);
+            } else
+                e.printStackTrace();
         }
+        if (FINISH)
+            System.exit(0);
     }
 
     @FXML
-    public void gamePanelOnMouseClicked(javafx.scene.input.MouseEvent mouseEvent) throws Exception {
+    public void gamePanelOnMouseClicked(javafx.scene.input.MouseEvent mouseEvent) {
         if (TURN) {
             int x = (int) (mouseEvent.getX() / BOUND);
             int y = (int) (mouseEvent.getY() / BOUND);
