@@ -29,15 +29,27 @@ public class ServerThread extends Thread{
                     break;
                 }
                 if (info1.equals("0")){
-                    System.out.println("Game " + count + " finished, Client1 and Client 2 draw.");
+                    System.out.println("Game " + count + " finished, Player 1 and Player 2 draw.");
                     break;
                 }
-                System.out.println("Player 1 puts " + info1);
-                pw2.write(info1);
+                System.out.println("Game " + count + ": Player 1 puts " + info1);
+                pw2.println(info1);
                 pw2.flush();
                 String info2 = br2.readLine();
-                System.out.println("Player 2 puts " + info2);
-                pw1.write(info2);
+                if (info2.equals("1")){
+                    System.out.println("Game " + count + " finished, Player 1 win, Player 2 lose.");
+                    break;
+                }
+                if (info2.equals("-1")){
+                    System.out.println("Game " + count + " finished, Player 1 lose, Player 2 win.");
+                    break;
+                }
+                if (info2.equals("0")){
+                    System.out.println("Game " + count + " finished, Player 1 and Player 2 draw.");
+                    break;
+                }
+                System.out.println("Game " + count + ": Player 2 puts " + info2);
+                pw1.println(info2);
                 pw1.flush();
             }
             socket1.close();
@@ -45,6 +57,5 @@ public class ServerThread extends Thread{
         } catch (Exception e){
             e.printStackTrace();
         }
-
     }
 }

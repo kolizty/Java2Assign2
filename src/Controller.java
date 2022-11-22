@@ -62,39 +62,43 @@ public class Controller implements Initializable {
     @FXML
     private void gamePanelOnMouseMoved() throws Exception {
         if (!TURN) {
-            String info;
-            if ((info = br.readLine()) != null) {
+            String info = br.readLine();
+            if (info != null){
                 String[] sp = info.split(" ");
                 int x = Integer.parseInt(sp[0]), y = Integer.parseInt(sp[1]);
                 refreshBoard(x, y);
                 TURN = true;
             }
+            if (getWinner() == EMPTY) {
+                System.out.println("Game draw!");
+                pw.println("0");
+                game_panel.setDisable(true);
+            }
+            if (getWinner() == PLAYER) {
+                System.out.println("You Win!");
+                game_panel.setDisable(true);
+            }
+            if (getWinner() == OPPONENT) {
+                System.out.println("You lose!");
+                game_panel.setDisable(true);
+            }
+            if (getWinner() == PLAY_1)
+                pw.println("1");
+            if (getWinner() == PLAY_2)
+                pw.println("-1");
+            pw.flush();
         }
-        if (getWinner() == EMPTY){
-            System.out.println("Game draw!");
-            pw.write("0");
-        }
-        if (getWinner() == PLAYER){
-            System.out.println("You Win!");
-            pw.write("1");
-        }
-        if (getWinner() == OPPONENT){
-            System.out.println("You lose!");
-            pw.write("-1");
-        }
-        pw.flush();
     }
 
     @FXML
     public void gamePanelOnMouseClicked(javafx.scene.input.MouseEvent mouseEvent) throws Exception {
         if (TURN) {
-            PrintWriter pw = new PrintWriter(socket.getOutputStream());
             int x = (int) (mouseEvent.getX() / BOUND);
             int y = (int) (mouseEvent.getY() / BOUND);
             if (refreshBoard(x, y)) {
                 TURN = !TURN;
                 String info = x + " " + y;
-                pw.write(info);
+                pw.println(info);
                 pw.flush();
             }
         }
@@ -102,7 +106,7 @@ public class Controller implements Initializable {
 
     private boolean refreshBoard(int x, int y) {
         if (chessBoard[x][y] == EMPTY) {
-            chessBoard[x][y] = PLAYER;
+            chessBoard[x][y] = TURN ? PLAYER : OPPONENT;
             drawChess();
             return true;
         }
