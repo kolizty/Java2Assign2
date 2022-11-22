@@ -1,3 +1,8 @@
+import java.io.*;
+import java.net.Socket;
+import java.net.URL;
+import java.util.ResourceBundle;
+
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.Pane;
@@ -6,28 +11,23 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
-import java.io.*;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URL;
-import java.util.ResourceBundle;
-
 public class Controller implements Initializable {
     private static final int PLAY_1 = 1;
     private static final int PLAY_2 = -1;
     private static final int EMPTY = 0;
     private static final int BOUND = 90;
     private static final int OFFSET = 15;
-
-    private static int PLAYER, OPPONENT;
-
-    @FXML
-    private Pane base_square;
+    private static int PLAYER;
+    private static int OPPONENT;
 
     @FXML
-    private Rectangle game_panel;
+    private Pane baseSquare;
 
-    private boolean TURN, FINISH;
+    @FXML
+    private Rectangle gamePanel;
+
+    private boolean turn;
+    private boolean finish;
 
     private static final int[][] chessBoard = new int[3][3];
     private static final boolean[][] flag = new boolean[3][3];
@@ -47,15 +47,15 @@ public class Controller implements Initializable {
             pw = new PrintWriter(socket.getOutputStream());
             String info = br.readLine();
             count = Integer.parseInt(info.split(" ")[1]);
-            FINISH = false;
+            finish = false;
             if (info.split(" ")[0].equals("1")) {
                 System.out.println("You are player 1, waiting for game " + count + " to match.");
-                TURN = true;
+                turn = true;
                 PLAYER = PLAY_1;
                 OPPONENT = PLAY_2;
             } else {
                 System.out.println("You are player 2, game " + count + " start.");
-                TURN = false;
+                turn = false;
                 PLAYER = PLAY_2;
                 OPPONENT = PLAY_1;
             }
@@ -67,54 +67,59 @@ public class Controller implements Initializable {
     @FXML
     private void gamePanelOnMouseMoved() {
         try {
-            if (!TURN) {
+            if (!turn) {
                 String info = br.readLine();
                 if (info != null) {
                     String[] sp = info.split(" ");
-                    int x = Integer.parseInt(sp[0]), y = Integer.parseInt(sp[1]);
+                    int x = Integer.parseInt(sp[0]);
+                    int y = Integer.parseInt(sp[1]);
                     refreshBoard(x, y);
-                    TURN = true;
+                    turn = true;
                 }
                 if (getWinner() == EMPTY) {
                     System.out.println("Game draw!");
                     pw.println("0");
-                    game_panel.setDisable(true);
-                    FINISH = true;
+                    gamePanel.setDisable(true);
+                    finish = true;
                 }
                 if (getWinner() == PLAYER) {
                     System.out.println("You Win!");
-                    game_panel.setDisable(true);
-                    FINISH = true;
+                    gamePanel.setDisable(true);
+                    finish = true;
                 }
                 if (getWinner() == OPPONENT) {
                     System.out.println("You lose!");
-                    game_panel.setDisable(true);
-                    FINISH = true;
+                    gamePanel.setDisable(true);
+                    finish = true;
                 }
-                if (getWinner() == PLAY_1)
+                if (getWinner() == PLAY_1) {
                     pw.println("1");
-                if (getWinner() == PLAY_2)
+                }
+                if (getWinner() == PLAY_2) {
                     pw.println("-1");
+                }
                 pw.flush();
             }
         } catch (Exception e) {
             if (e.getMessage().equals("Connection reset")) {
                 System.out.println("Server disconnected, game exit.");
                 System.exit(-1);
-            } else
+            } else {
                 e.printStackTrace();
+            }
         }
-        if (FINISH)
+        if (finish) {
             System.exit(0);
+        }
     }
 
     @FXML
     public void gamePanelOnMouseClicked(javafx.scene.input.MouseEvent mouseEvent) {
-        if (TURN) {
+        if (turn) {
             int x = (int) (mouseEvent.getX() / BOUND);
             int y = (int) (mouseEvent.getY() / BOUND);
             if (refreshBoard(x, y)) {
-                TURN = !TURN;
+                turn = !turn;
                 String info = x + " " + y;
                 pw.println(info);
                 pw.flush();
@@ -124,7 +129,7 @@ public class Controller implements Initializable {
 
     private boolean refreshBoard(int x, int y) {
         if (chessBoard[x][y] == EMPTY) {
-            chessBoard[x][y] = TURN ? PLAYER : OPPONENT;
+            chessBoard[x][y] = turn ? PLAYER : OPPONENT;
             drawChess();
             return true;
         }
@@ -157,7 +162,7 @@ public class Controller implements Initializable {
 
     private void drawCircle(int i, int j) {
         Circle circle = new Circle();
-        base_square.getChildren().add(circle);
+        baseSquare.getChildren().add(circle);
         circle.setCenterX(i * BOUND + BOUND / 2.0 + OFFSET);
         circle.setCenterY(j * BOUND + BOUND / 2.0 + OFFSET);
         circle.setRadius(BOUND / 2.0 - OFFSET / 2.0);
@@ -167,21 +172,21 @@ public class Controller implements Initializable {
     }
 
     private void drawLine(int i, int j) {
-        Line line_a = new Line();
-        Line line_b = new Line();
-        base_square.getChildren().add(line_a);
-        base_square.getChildren().add(line_b);
-        line_a.setStartX(i * BOUND + OFFSET * 1.5);
-        line_a.setStartY(j * BOUND + OFFSET * 1.5);
-        line_a.setEndX((i + 1) * BOUND + OFFSET * 0.5);
-        line_a.setEndY((j + 1) * BOUND + OFFSET * 0.5);
-        line_a.setStroke(Color.BLUE);
+        Line lineA = new Line();
+        Line lineB = new Line();
+        baseSquare.getChildren().add(lineA);
+        baseSquare.getChildren().add(lineB);
+        lineA.setStartX(i * BOUND + OFFSET * 1.5);
+        lineA.setStartY(j * BOUND + OFFSET * 1.5);
+        lineA.setEndX((i + 1) * BOUND + OFFSET * 0.5);
+        lineA.setEndY((j + 1) * BOUND + OFFSET * 0.5);
+        lineA.setStroke(Color.BLUE);
 
-        line_b.setStartX((i + 1) * BOUND + OFFSET * 0.5);
-        line_b.setStartY(j * BOUND + OFFSET * 1.5);
-        line_b.setEndX(i * BOUND + OFFSET * 1.5);
-        line_b.setEndY((j + 1) * BOUND + OFFSET * 0.5);
-        line_b.setStroke(Color.BLUE);
+        lineB.setStartX((i + 1) * BOUND + OFFSET * 0.5);
+        lineB.setStartY(j * BOUND + OFFSET * 1.5);
+        lineB.setEndX(i * BOUND + OFFSET * 1.5);
+        lineB.setEndY((j + 1) * BOUND + OFFSET * 0.5);
+        lineB.setStroke(Color.BLUE);
         flag[i][j] = true;
     }
 
@@ -193,8 +198,9 @@ public class Controller implements Initializable {
                 || chessBoard[0][1] + chessBoard[1][1] + chessBoard[2][1] == 3
                 || chessBoard[0][2] + chessBoard[1][2] + chessBoard[2][2] == 3
                 || chessBoard[0][0] + chessBoard[1][1] + chessBoard[2][2] == 3
-                || chessBoard[0][2] + chessBoard[1][1] + chessBoard[2][0] == 3)
+                || chessBoard[0][2] + chessBoard[1][1] + chessBoard[2][0] == 3) {
             return PLAY_1;
+        }
         if (chessBoard[0][0] + chessBoard[0][1] + chessBoard[0][2] == -3
                 || chessBoard[1][0] + chessBoard[1][1] + chessBoard[1][2] == -3
                 || chessBoard[2][0] + chessBoard[2][1] + chessBoard[2][2] == -3
@@ -202,18 +208,23 @@ public class Controller implements Initializable {
                 || chessBoard[0][1] + chessBoard[1][1] + chessBoard[2][1] == -3
                 || chessBoard[0][2] + chessBoard[1][2] + chessBoard[2][2] == -3
                 || chessBoard[0][0] + chessBoard[1][1] + chessBoard[2][2] == -3
-                || chessBoard[0][2] + chessBoard[1][1] + chessBoard[2][0] == -3)
+                || chessBoard[0][2] + chessBoard[1][1] + chessBoard[2][0] == -3) {
             return PLAY_2;
-        if (isFull())
+        }
+        if (isFull()) {
             return EMPTY;
+        }
         return 2;
     }
 
     private boolean isFull() {
-        for (int i = 0; i < chessBoard.length; i++)
-            for (int j = 0; j < chessBoard[i].length; j++)
-                if (chessBoard[i][j] == EMPTY)
+        for (int i = 0; i < chessBoard.length; i++) {
+            for (int j = 0; j < chessBoard[i].length; j++) {
+                if (chessBoard[i][j] == EMPTY) {
                     return false;
+                }
+            }
+        }
         return true;
     }
 }

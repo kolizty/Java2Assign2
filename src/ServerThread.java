@@ -16,18 +16,20 @@ public class ServerThread extends Thread {
         try {
             while (true) {
                 BufferedReader br1 = new BufferedReader(new InputStreamReader(socket1.getInputStream()));
-                BufferedReader br2 = new BufferedReader(new InputStreamReader(socket2.getInputStream()));
-                PrintWriter pw1 = new PrintWriter(socket1.getOutputStream());
                 PrintWriter pw2 = new PrintWriter(socket2.getOutputStream());
                 String info1 = br1.readLine();
-                if (gameEnd(info1))
+                if (gameEnd(info1)) {
                     break;
+                }
                 System.out.println("Game " + count + ": Player 1 puts " + info1);
                 pw2.println(info1);
                 pw2.flush();
+                BufferedReader br2 = new BufferedReader(new InputStreamReader(socket2.getInputStream()));
+                PrintWriter pw1 = new PrintWriter(socket1.getOutputStream());
                 String info2 = br2.readLine();
-                if (gameEnd(info2))
+                if (gameEnd(info2)) {
                     break;
+                }
                 System.out.println("Game " + count + ": Player 2 puts " + info2);
                 pw1.println(info2);
                 pw1.flush();
